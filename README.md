@@ -1,59 +1,160 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Менеджер Задач API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Простое API для управления задачами с токен-аутентификацией.
 
-## About Laravel
+## API Эндпоинты
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Аутентификация
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+#### Регистрация
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Метод:** `POST`
+- **URL:** `/api/register`
+- **Тело запроса:**
+  ```json
+  {
+      "name": "Your Name",
+      "email": "your.email@example.com",
+      "password": "your_password",
+      "password_confirmation": "your_password"
+  }
+  ```
+- **Ответ:**
+  ```json
+  {
+      "name": "Your Name",
+      "email": "your.email@example.com",
+      "updated_at": "2025-12-05T12:00:00.000000Z",
+      "created_at": "2025-12-05T12:00:00.000000Z",
+      "id": 1
+  }
+  ```
 
-## Learning Laravel
+#### Логин
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- **Метод:** `POST`
+- **URL:** `/api/login`
+- **Тело запроса:**
+  ```json
+  {
+      "email": "your.email@example.com",
+      "password": "your_password"
+  }
+  ```
+- **Ответ:**
+  ```json
+  {
+      "token": "1|xxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  }
+  ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+#### Выход
 
-## Laravel Sponsors
+- **Метод:** `POST`
+- **URL:** `/api/logout`
+- **Заголовки:**
+  - `Authorization: Bearer <token>`
+- **Ответ:**
+  ```json
+  {
+      "message": "Выход выполнен успешно"
+  }
+  ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Задачи
 
-### Premium Partners
+Для всех эндпоинтов задач требуется заголовок `Authorization: Bearer <token>`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+#### Получение списка задач
 
-## Contributing
+- **Метод:** `GET`
+- **URL:** `/api/tasks`
+- **Параметры запроса (фильтры):**
+  - `status` (string, опционально): `planned`, `in_progress`, `done`
+  - `assignee_id` (integer, опционально): ID пользователя
+  - `due_date` (date, опционально): Дата в формате `YYYY-MM-DD`
+- **Пример ответа:**
+  ```json
+  [
+      {
+          "id": 1,
+          "title": "Первая задача",
+          "description": "Описание задачи",
+          "status": "planned",
+          "due_date": null,
+          "assignee_id": 1,
+          "created_at": "2025-12-05T12:00:00.000000Z",
+          "updated_at": "2025-12-05T12:00:00.000000Z",
+          "assignee": { ... },
+          "attachment_url": "http://localhost/storage/1/file.jpg"
+      }
+  ]
+  ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#### Создание новой задачи
 
-## Code of Conduct
+- **Метод:** `POST`
+- **URL:** `/api/tasks`
+- **Тело запроса (form-data):**
+  - `title` (string, обязательно)
+  - `description` (string, обязательно)
+  - `status` (string, опционально)
+  - `due_date` (date, опционально)
+  - `assignee_id` (integer, опционально)
+  - `attachment` (file, опционально)
+- **Пример ответа (201 Created):**
+  ```json
+  {
+      "id": 2,
+      "title": "Новая задача",
+      "description": "...",
+      // ...
+      "attachment_url": "http://localhost/storage/2/new_file.pdf"
+  }
+  ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+#### Получение информации о задаче
 
-## Security Vulnerabilities
+- **Метод:** `GET`
+- **URL:** `/api/tasks/{id}`
+- **Пример ответа:**
+  ```json
+  {
+      "id": 1,
+      "title": "Первая задача",
+      // ...
+  }
+  ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+#### Обновление данных задачи
 
-## License
+- **Метод:** `PUT`
+- **URL:** `/api/tasks/{id}`
+- **Тело запроса (x-www-form-urlencoded или form-data для файла):**
+  - `title` (string, опционально)
+  - `description` (string, опционально)
+  - `status` (string, опционально)
+  - `due_date` (date, опционально)
+  - `assignee_id` (integer, опционально)
+  - `attachment` (file, опционально)
+- **Пример ответа:**
+  ```json
+  {
+      "id": 1,
+      "title": "Обновленный заголовок",
+      // ...
+  }
+  ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#### Удаление задачи
+
+- **Метод:** `DELETE`
+- **URL:** `/api/tasks/{id}`
+- **Ответ:** `204 No Content`
+
+## Тестирование
+
+Для запуска набора тестов выполните:
+```bash
+php artisan test
+```
